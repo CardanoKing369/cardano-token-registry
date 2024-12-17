@@ -12,23 +12,31 @@ jobs:
   notify_discord:
     runs-on: ubuntu-latest
     steps:
+    
       - name: Notify Discord on Push
         if: github.event_name == 'push'
         run: |
           curl -X POST -H "Content-Type: application/json" \
-          -d "{\"content\": \"🚀 A new push to the repository: ${GITHUB_REPOSITORY}\nCommit: ${GITHUB_SHA}\nCheck it out: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}\"}" \
+          -d "$(jq -n --arg upstream "https://github.com/YOUR_UPSTREAM_REPO" \
+                     --arg sha "${GITHUB_SHA}" \
+                     '{content: "🚀 A new push to the upstream repository\nCommit: \($sha)\nCheck it out: \($upstream)/commit/\($sha)"}')" \
           ${{ secrets.DISCORD_WEBHOOK }}
 
+      
       - name: Notify Discord on Release
         if: github.event_name == 'release'
         run: |
           curl -X POST -H "Content-Type: application/json" \
-          -d "{\"content\": \"🎉 A new release has been published: ${GITHUB_REPOSITORY}\nRelease: ${GITHUB_REF_NAME}\nCheck it out: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/latest\"}" \
+          -d "$(jq -n --arg upstream "https://github.com/YOUR_UPSTREAM_REPO" \
+                     --arg tag "${GITHUB_REF_NAME}" \
+                     '{content: "🎉 A new release has been published in the upstream repository\nRelease: \($tag)\nCheck it out: \($upstream)/releases/latest"}')" \
           ${{ secrets.DISCORD_WEBHOOK }}
 
+     
       - name: Notify Discord on Manual Trigger
         if: github.event_name == 'workflow_dispatch'
         run: |
           curl -X POST -H "Content-Type: application/json" \
-          -d "{\"content\": \"🛠 This workflow was triggered manually for: ${GITHUB_REPOSITORY}\nTriggered by: ${GITHUB_ACTOR}\"}" \
+          -d "$(jq -n --arg upstream "https://github.com/YOUR_UPSTREAM_REPO" \
+                     '{content: "🛠 This workflow was triggered manually for the upstream repository"}')" \
           ${{ secrets.DISCORD_WEBHOOK }}
