@@ -2,7 +2,7 @@ name: Sync Fork with Upstream
 
 on:
   schedule:
-    - cron: '*/5 * * * *' 
+    - cron: '0 * * * *' 
   workflow_dispatch: 
 
 jobs:
@@ -12,15 +12,25 @@ jobs:
       - name: Checkout Fork
         uses: actions/checkout@v3
         with:
-          persist-credentials: true
+          persist-credentials: false
 
-      - name: Add Upstream
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Add Upstream Remote
         run: |
           git remote add upstream https://github.com/cardano-foundation/cardano-token-registry.git
           git fetch upstream
-          git checkout master
-          git merge upstream/master
-          
-      - name: Push Changes
+
+      - name: Merge Upstream Changes
         run: |
-          git push origin main
+          git checkout master                 
+          git merge upstream/master --no-edit 
+
+      - name: Push Changes to Fork
+        env:
+          PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          git push https://x-access-token:${PAT_TOKEN}@github.com/CardanoKing369/cardano-token-registry.git master
